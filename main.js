@@ -32,9 +32,12 @@ define(function (require, exports, module) {
     function getDialogTextFields() {
         return $("input[type='text']", modalBar.getRoot());
     }
-    function escapeString(string)
-    {
+
+    function escapeString(string) {
         return String(string).replace(/'/g, '\\\'').replace(/\n/g, '\\n').replace(/\r/g, '');
+    }
+    function escapeRegExp(str) {
+        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     }
 
     /**
@@ -77,7 +80,9 @@ define(function (require, exports, module) {
         });
     }
 
-    //Translate current line
+    /**
+     * Edit translation of translated string at cursor position
+     */
     function handleTranslate() {
         var editor = EditorManager.getFocusedEditor();
 
@@ -155,6 +160,9 @@ define(function (require, exports, module) {
         translateKey(key);
     }
 
+    /**
+     * Show translation editor for one language key
+     */
     function translateKey(key) {
         var editor = EditorManager.getFocusedEditor();
         if (!editor) {
@@ -163,7 +171,7 @@ define(function (require, exports, module) {
         var originalFileEntry = editor.document.file;
 
         var lines = {},
-            reg = new RegExp('\\$lang\\[(?:\'|")' + key + '(?:\'|")\\]\\s*=\\s*(?:\'|")(.*)(?:\'|")\\s*;?');
+            reg = new RegExp('\\$lang\\[(?:\'|")' + escapeRegExp(key) + '(?:\'|")\\]\\s*=\\s*(?:\'|")(.*)(?:\'|")\\s*;?');
         openLanguageFiles(function (doc, language) {
             var text = doc.getText(true),
                 matches = text.match(reg);
@@ -214,7 +222,9 @@ define(function (require, exports, module) {
         });
     }
 
-    //Transform text into language
+    /**
+     * Convert selected string to translated string
+     */
     function handleConvert() {
         var editor = EditorManager.getFocusedEditor();
 
@@ -237,29 +247,54 @@ define(function (require, exports, module) {
         if (!is_smarty) {
             selectedText = selectedText.replace(/^('|")/, '').replace(/('|")$/, '');
         }
-        var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
-
-        createModalBar(queryDialog, true, true);
-        var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
-        $(modalBar).on('commit', function () {
-            var key = input.val(),
-                lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
-
-            if (!key) {
-                return;
+        //Let's see if this has allready been translated
+        var found_keys = new Array(),
+            reg = new RegExp('\\$lang\\[(?:\'|")(.+)(?:\'|")\\]\\s*=\\s*(?:\'|")' + escapeRegExp(escapeString(selectedText)) + '(?:\'|")\\s*;?');
+        openLanguageFiles(function (doc, lang) {
+            var text = doc.getText(true),
+                matches = text.match(reg);
+            if(matches) {
+                found_keys.push(matches[1]);
             }
-
-            doc.replaceRange(lang_tag, sel.start, sel.end);
-
-            openLanguageFiles(function (doc, lang) {
-                var text = doc.getText();
-                text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
-                doc.setText(text);
-            }, function () {
+        }, function () {
+            var use_key = false;
+            if(found_keys.length > 0) {
+                for(var key in found_keys) {
+                    if(confirm('This text seems to allready have been translated with the key "'+found_keys[key]+'" do you whant to use this key ?')) {
+                        use_key = found_keys[key];
+                        break;
+                    }
+                }
+            }
+            if(use_key) {
+                var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
+                doc.replaceRange(lang_tag, sel.start, sel.end);
                 CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
-                translateKey(key);
-            });
+            }else {
+                var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
 
+                createModalBar(queryDialog, true, true);
+                var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
+                $(modalBar).on('commit', function () {
+                    var key = input.val(),
+                        lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
+
+                    if (!key) {
+                        return;
+                    }
+
+                    doc.replaceRange(lang_tag, sel.start, sel.end);
+
+                    openLanguageFiles(function (doc, lang) {
+                        var text = doc.getText();
+                        text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
+                        doc.setText(text);
+                    }, function () {
+                        CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
+                        translateKey(key);
+                    });
+                });
+            }
         });
     }
 
