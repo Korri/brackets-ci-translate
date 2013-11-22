@@ -56,28 +56,36 @@ define(function (require, exports, module) {
             localStorage[translate_key] = language_file = prompt('Name of the language file (Enter example_lang to translate application/language/english/example_lang.php)');
         }
         var dirEntry = FileSystem.getDirectoryForPath(projectRoot.fullPath + 'application/language');
-        dirEntry.exists(function(error, exists){
-            if(!exists)  {
+        dirEntry.exists(function (error, exists) {
+            if (!exists) {
                 alert('Folder "' + projectRoot.fullPath + 'application/language' + '" does not exist');
             } else {
-                var reader = dirEntry.createReader();
-                reader.readEntries(function (entries) {
-                    var count = entries.length;
-                    entries.forEach(function (dirEntry) {
-                        dirEntry.getFile(language_file + '.php', {}, function (languageFile) {
-
-                            CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: languageFile.fullPath })
-                                .done(function (doc) {
-                                    callback(doc, dirEntry.name);
-                                    if (--count == 0 && end_callback) {
-                                        end_callback();
+                dirEntry.getContents(function (error, entries) {
+                    if (error) {
+                        alert('Error: ' + error);
+                    } else {
+                        var count = entries.length;
+                        entries.forEach(function (entry) {
+                            FileSystem.resolve(entry.fullPath + language_file + '.php', function (err, languageFile) {
+                                if (err) {
+                                    localStorage[translate_key] = false;
+                                    alert('Language file (' + language_file + '.php) not found (' + err + '), will ask for language file name again next time.');
+                                } else {
+                                    if (languageFile.isDirectory) {
+                                        alert('Language file (' + language_file + '.php) is a directory !');
+                                    } else {
+                                        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: languageFile.fullPath })
+                                            .done(function (doc) {
+                                                callback(doc, entry.name);
+                                                if (--count == 0 && end_callback) {
+                                                    end_callback();
+                                                }
+                                            });
                                     }
-                                });
-                        }, function () {
-                            localStorage[translate_key] = false;
-                            alert('Language file (' + dirEntry.fullPath + '/' + language_file + '.php) not found, will ask for language file name again next time.');
+                                }
+                            });
                         });
-                    });
+                    }
                 }, function (error) {
                     alert('Error opening language files');
                 });
@@ -265,7 +273,7 @@ define(function (require, exports, module) {
             var use_key = false;
             if (found_keys.length > 0) {
                 for (var key in found_keys) {
-                    if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you whant to use this key ?')) {
+                    if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you want to use this key ?')) {
                         use_key = found_keys[key];
                         break;
                     }
