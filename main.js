@@ -8,7 +8,8 @@ define(function (require, exports, module) {
         ProjectManager = brackets.getModule("project/ProjectManager"),
         NativeFileSystem = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         ModalBar = brackets.getModule("widgets/ModalBar").ModalBar,
-        FileUtils = brackets.getModule("file/FileUtils");
+        FileUtils = brackets.getModule("file/FileUtils"),
+        FileSystem = brackets.getModule("filesystem/FileSystem");
 
     var modalBar = null,
         TRANSLATE_FILE_KEY = 'korri.citranslate.langfile.';
@@ -36,6 +37,7 @@ define(function (require, exports, module) {
     function escapeString(string) {
         return String(string).replace(/'/g, '\\\'').replace(/\n/g, '\\n').replace(/\r/g, '');
     }
+
     function escapeRegExp(str) {
         return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     }
@@ -53,30 +55,33 @@ define(function (require, exports, module) {
         while (!language_file || language_file == 'false') {
             localStorage[translate_key] = language_file = prompt('Name of the language file (Enter example_lang to translate application/language/english/example_lang.php)');
         }
-        projectRoot.getDirectory('application/language', {}, function (dirEntry) {
-            var reader = dirEntry.createReader();
-            reader.readEntries(function (entries) {
-                var count = entries.length;
-                entries.forEach(function (dirEntry) {
-                    dirEntry.getFile(language_file + '.php', {}, function (languageFile) {
+        var dirEntry = FileSystem.getDirectoryForPath(projectRoot.fullPath + 'application/language');
+        dirEntry.exists(function(error, exists){
+            if(!exists)  {
+                alert('Folder "' + projectRoot.fullPath + 'application/language' + '" does not exist');
+            } else {
+                var reader = dirEntry.createReader();
+                reader.readEntries(function (entries) {
+                    var count = entries.length;
+                    entries.forEach(function (dirEntry) {
+                        dirEntry.getFile(language_file + '.php', {}, function (languageFile) {
 
-                        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: languageFile.fullPath })
-                            .done(function (doc) {
-                                callback(doc, dirEntry.name);
-                                if (--count == 0 && end_callback) {
-                                    end_callback();
-                                }
-                            });
-                    }, function () {
-                        localStorage[translate_key] = false;
-                        alert('Language file (' + dirEntry.fullPath + '/' + language_file + '.php) not found, will ask for language file name again next time.');
+                            CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: languageFile.fullPath })
+                                .done(function (doc) {
+                                    callback(doc, dirEntry.name);
+                                    if (--count == 0 && end_callback) {
+                                        end_callback();
+                                    }
+                                });
+                        }, function () {
+                            localStorage[translate_key] = false;
+                            alert('Language file (' + dirEntry.fullPath + '/' + language_file + '.php) not found, will ask for language file name again next time.');
+                        });
                     });
+                }, function (error) {
+                    alert('Error opening language files');
                 });
-            }, function (error) {
-                alert('Error opening language files');
-            });
-        }, function () {
-            alert('Folder "application/language" does not exist');
+            }
         });
     }
 
@@ -253,24 +258,24 @@ define(function (require, exports, module) {
         openLanguageFiles(function (doc, lang) {
             var text = doc.getText(true),
                 matches = text.match(reg);
-            if(matches) {
+            if (matches) {
                 found_keys.push(matches[1]);
             }
         }, function () {
             var use_key = false;
-            if(found_keys.length > 0) {
-                for(var key in found_keys) {
-                    if(confirm('This text seems to allready have been translated with the key "'+found_keys[key]+'" do you whant to use this key ?')) {
+            if (found_keys.length > 0) {
+                for (var key in found_keys) {
+                    if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you whant to use this key ?')) {
                         use_key = found_keys[key];
                         break;
                     }
                 }
             }
-            if(use_key) {
+            if (use_key) {
                 var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
                 doc.replaceRange(lang_tag, sel.start, sel.end);
                 CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
-            }else {
+            } else {
                 CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
                 var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
 
