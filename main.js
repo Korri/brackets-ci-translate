@@ -122,7 +122,7 @@ define(function (require, exports, module) {
             do {
                 range.end.ch++;
                 text = doc.getRange(range.start, range.end);
-            } while (range.end.ch < 100 && text.charAt(text.length - 1) != '}');
+            } while (/*Have we reached the end*/text.length == range.end.ch - range.start.ch && text.charAt(text.length - 1) != '}');
 
             if (text.charAt(text.length - 1) != '}') {
                 return;
