@@ -271,6 +271,7 @@ define(function (require, exports, module) {
                 doc.replaceRange(lang_tag, sel.start, sel.end);
                 CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
             }else {
+                CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
                 var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
 
                 createModalBar(queryDialog, true, true);
