@@ -267,51 +267,50 @@ define(function (require, exports, module) {
             var text = doc.getText(true),
                 matches;
             while(matches = reg.exec(text)) {
-                console.log(matches);
                 found_keys.push(matches[1]);
             }
         }, function () {
             //Back to main edited document
-            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
-            var use_key = false;
-            if (found_keys.length > 0) {
-                console.log(found_keys);
-                //TODO: Use a query dialog
-                for (var key in found_keys) {
-                    if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you want to use this key ?')) {
-                        use_key = found_keys[key];
-                        break;
+            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath }).done(function(){
+                var use_key = false;
+                if (found_keys.length > 0) {
+                    //TODO: Use a query dialog
+                    for (var key in found_keys) {
+                        if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you want to use this key ?')) {
+                            use_key = found_keys[key];
+                            break;
+                        }
                     }
                 }
-            }
-            if (use_key) {
-                var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
-                doc.replaceRange(lang_tag, sel.start, sel.end);
-            } else {
-                var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + selectedText + '</em>)';
-
-                createModalBar(queryDialog, true, true);
-                var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
-                $(modalBar).on('commit', function () {
-                    var key = input.val(),
-                        lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
-
-                    if (!key) {
-                        return;
-                    }
-
+                if (use_key) {
+                    var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
                     doc.replaceRange(lang_tag, sel.start, sel.end);
+                } else {
+                    var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + selectedText + '</em>)';
 
-                    openLanguageFiles(function (doc, lang) {
-                        var text = doc.getText();
-                        text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
-                        doc.setText(text);
-                    }, function () {
-                        CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
-                        translateKey(key);
+                    createModalBar(queryDialog, true, true);
+                    var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
+                    $(modalBar).on('commit', function () {
+                        var key = input.val(),
+                            lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
+
+                        if (!key) {
+                            return;
+                        }
+
+                        doc.replaceRange(lang_tag, sel.start, sel.end);
+
+                        openLanguageFiles(function (doc, lang) {
+                            var text = doc.getText();
+                            text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
+                            doc.setText(text);
+                        }, function () {
+                            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
+                            translateKey(key);
+                        });
                     });
-                });
-            }
+                }
+            });
         });
     }
 
