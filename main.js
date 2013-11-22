@@ -288,7 +288,7 @@ define(function (require, exports, module) {
                 var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
                 doc.replaceRange(lang_tag, sel.start, sel.end);
             } else {
-                var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
+                var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + selectedText + '</em>)';
 
                 createModalBar(queryDialog, true, true);
                 var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
