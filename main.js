@@ -262,16 +262,21 @@ define(function (require, exports, module) {
         }
         //Let's see if this has allready been translated
         var found_keys = new Array(),
-            reg = new RegExp('\\$lang\\[(?:\'|")(.+)(?:\'|")\\]\\s*=\\s*(?:\'|")' + escapeRegExp(escapeString(selectedText)) + '(?:\'|")\\s*;?');
+            reg = new RegExp('\\$lang\\[(?:\'|")(.+)(?:\'|")\\]\\s*=\\s*(?:\'|")' + escapeRegExp(escapeString(selectedText)) + '(?:\'|")\\s*;?', 'g');
         openLanguageFiles(function (doc, lang) {
             var text = doc.getText(true),
-                matches = text.match(reg);
-            if (matches) {
+                matches;
+            while(matches = reg.exec(text)) {
+                console.log(matches);
                 found_keys.push(matches[1]);
             }
         }, function () {
+            //Back to main edited document
+            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
             var use_key = false;
             if (found_keys.length > 0) {
+                console.log(found_keys);
+                //TODO: Use a query dialog
                 for (var key in found_keys) {
                     if (confirm('This text seems to allready have been translated with the key "' + found_keys[key] + '" do you want to use this key ?')) {
                         use_key = found_keys[key];
@@ -282,9 +287,7 @@ define(function (require, exports, module) {
             if (use_key) {
                 var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
                 doc.replaceRange(lang_tag, sel.start, sel.end);
-                CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
             } else {
-                CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
                 var queryDialog = 'Clef de langue : <input type="text" style="width: 10em"/> (pour le texte <em>' + selectedText + '</em>)';
 
                 createModalBar(queryDialog, true, true);
