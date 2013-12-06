@@ -9,12 +9,13 @@ define(function (require, exports, module) {
         NativeFileSystem = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         ModalBar = brackets.getModule("widgets/ModalBar").ModalBar,
         FileUtils = brackets.getModule("file/FileUtils"),
+        KeyEvent = brackets.getModule("utils/KeyEvent"),
         FileSystem = brackets.getModule("filesystem/FileSystem");
 
     var modalBar = null,
         TRANSLATE_FILE_KEY = 'korri.citranslate.langfile.';
 
-    function createModalBar(template, autoClose, animate) {
+    function createModalBar(template) {
         // Normally, creating a new modal bar will simply cause the old one to close
         // automatically. This can cause timing issues because the focus change might
         // cause the new one to think it should close, too. The old CodeMirror version
@@ -22,11 +23,21 @@ define(function (require, exports, module) {
         // the modal bar to close. Rather than reinstate that hack, we simply explicitly
         // close the old modal bar before creating a new one.
         if (modalBar) {
-            modalBar.close(true, animate);
+            modalBar.close(true);
         }
-        modalBar = new ModalBar(template, autoClose, animate);
-        $(modalBar).on("commit close", function () {
-            modalBar = null;
+        modalBar = new ModalBar(template, false, true);
+
+        //Handle ENTER and ESCAPE keys manually
+        getDialogTextFields().keydown(function(e){
+            if (e.keyCode === KeyEvent.DOM_VK_RETURN || e.keyCode === KeyEvent.DOM_VK_ESCAPE) {
+                e.stopPropagation();
+                e.preventDefault();
+                modalBar.close(true);
+                if(e.keyCode === KeyEvent.DOM_VK_RETURN) {
+                    $(modalBar).triggerHandler('submit');
+                }
+                modalBar = null;
+            }
         });
     }
 
@@ -207,11 +218,10 @@ define(function (require, exports, module) {
             }
             dialog += '</table>'
 
-            createModalBar(dialog, true, true);
+            createModalBar(dialog);
             var inputs = getDialogTextFields();
-            inputs.slice(1).on("keydown", modalBar._handleInputKeydown);
 
-            $(modalBar).on('commit', function (ev) {
+            $(modalBar).on('submit', function (ev) {
 
                 var lines = {};
 
@@ -288,9 +298,9 @@ define(function (require, exports, module) {
                 } else {
                     var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + selectedText + '</em>)';
 
-                    createModalBar(queryDialog, true, true);
+                    createModalBar(queryDialog);
                     var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
-                    $(modalBar).on('commit', function () {
+                    $(modalBar).on('submit', function () {
                         var key = input.val(),
                             lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
 
