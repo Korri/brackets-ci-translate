@@ -20,7 +20,6 @@ define(function (require, exports, module) {
             modalBar.close(true);
         }
         modalBar = new ModalBar(template, false, true);
-        console.log('open');
 
 
         //Handle ENTER and ESCAPE keys manually
