@@ -16,27 +16,28 @@ define(function (require, exports, module) {
         TRANSLATE_FILE_KEY = 'korri.citranslate.langfile.';
 
     function createModalBar(template) {
-        // Normally, creating a new modal bar will simply cause the old one to close
-        // automatically. This can cause timing issues because the focus change might
-        // cause the new one to think it should close, too. The old CodeMirror version
-        // of this handled it by adding a timeout within which a blur wouldn't cause
-        // the modal bar to close. Rather than reinstate that hack, we simply explicitly
-        // close the old modal bar before creating a new one.
         if (modalBar) {
             modalBar.close(true);
         }
         modalBar = new ModalBar(template, false, true);
+        console.log('open');
+
 
         //Handle ENTER and ESCAPE keys manually
-        getDialogTextFields().keydown(function(e){
+        getDialogTextFields().keydown(function (e) {
             if (e.keyCode === KeyEvent.DOM_VK_RETURN || e.keyCode === KeyEvent.DOM_VK_ESCAPE) {
                 e.stopPropagation();
                 e.preventDefault();
-                modalBar.close(true);
-                if(e.keyCode === KeyEvent.DOM_VK_RETURN) {
+                if (modalBar) {
+                    modalBar.close(true);
+                }
+                var oldModal = modalBar;
+                if (e.keyCode === KeyEvent.DOM_VK_RETURN) {
                     $(modalBar).triggerHandler('submit');
                 }
-                modalBar = null;
+                if (modalBar === oldModal) {
+                    modalBar = null;
+                }
             }
         });
     }
@@ -221,6 +222,8 @@ define(function (require, exports, module) {
             createModalBar(dialog);
             var inputs = getDialogTextFields();
 
+            inputs.eq(0).focus();
+
             $(modalBar).on('submit', function (ev) {
 
                 var lines = {};
@@ -276,12 +279,12 @@ define(function (require, exports, module) {
         openLanguageFiles(function (doc, lang) {
             var text = doc.getText(true),
                 matches;
-            while(matches = reg.exec(text)) {
+            while (matches = reg.exec(text)) {
                 found_keys.push(matches[1]);
             }
         }, function () {
             //Back to main edited document
-            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath }).done(function(){
+            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath }).done(function () {
                 var use_key = false;
                 if (found_keys.length > 0) {
                     //TODO: Use a query dialog
