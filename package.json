@@ -7,6 +7,6 @@
     "author": "Hugo Vacher <korrrigan33@gmail.com>",
     "license": "MIT",
     "engines": {
-        "brackets": ">=0.32.0"
+        "brackets": ">=0.33.0"
     }
 }
