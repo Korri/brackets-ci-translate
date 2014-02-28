@@ -48,10 +48,29 @@ define(function (require, exports, module) {
     function escapeString(string) {
         return String(string).replace(/'/g, '\\\'').replace(/\n/g, '\\n').replace(/\r/g, '');
     }
+    function unescapeString(string) {
+        return String(string).replace(/\\('|")/g, '$1');
+    }
 
     function escapeRegExp(str) {
         return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     }
+    var escapeHtml = (function(){
+        var entityMap = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': '&quot;',
+            "'": '&#39;',
+            "/": '&#x2F;'
+        };
+
+        return function(string) {
+            return String(string).replace(/[&<>"'\/]/g, function (s) {
+                return entityMap[s];
+            });
+        }
+    })();
 
     /**
      * Loop and open all language files
@@ -212,8 +231,8 @@ define(function (require, exports, module) {
                 var line = lines[lang];
                 dialog +=
                     '<tr>' +
-                        '<td style="white-space: nowrap; width: 5%">"' + key + '" in "<strong>' + lang + '</strong>"</td>' +
-                        '<td><input style="width: 100%;box-sizing: border-box;height: 30px;" type="text" name="' + lang + '" value="' + line + '"/></td>' +
+                        '<td style="white-space: nowrap; width: 5%">"' + escapeHtml(key) + '" in "<strong>' + escapeHtml(lang) + '</strong>"</td>' +
+                        '<td><input style="width: 100%;box-sizing: border-box;height: 30px;" type="text" name="' + escapeHtml(lang) + '" value="' + escapeHtml(line) + '"/></td>' +
                         '</tr>';
             }
             dialog += '</table>'
@@ -270,7 +289,7 @@ define(function (require, exports, module) {
             is_smarty = filename.match(/\.tpl$/),
             selectedText = doc.getRange(sel.start, sel.end);
         if (!is_smarty) {
-            selectedText = selectedText.replace(/^('|")/, '').replace(/('|")$/, '');
+            selectedText = unescapeString(selectedText.replace(/^('|")/, '').replace(/('|")$/, ''));
         }
         //Let's see if this has allready been translated
         var found_keys = new Array(),
@@ -298,7 +317,7 @@ define(function (require, exports, module) {
                     var lang_tag = is_smarty ? '{l "' + use_key + '"}' : "lang('" + use_key + "')";
                     doc.replaceRange(lang_tag, sel.start, sel.end);
                 } else {
-                    var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + selectedText + '</em>)';
+                    var queryDialog = 'Language key: <input type="text" style="width: 10em"/> (for text <em>' + escapeHtml(selectedText) + '</em>)';
 
                     createModalBar(queryDialog);
                     var input = getDialogTextFields().val(filename.replace(/\.([a-z]{3})$/, '') + '.').focus();
