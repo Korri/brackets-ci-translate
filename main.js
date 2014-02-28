@@ -57,23 +57,6 @@ define(function (require, exports, module) {
         return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     }
 
-    var escapeHtml = (function () {
-        var entityMap = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': '&quot;',
-            "'": '&#39;',
-            "/": '&#x2F;'
-        };
-
-        return function (string) {
-            return String(string).replace(/[&<>"'\/]/g, function (s) {
-                return entityMap[s];
-            });
-        }
-    })();
-
     /**
      * Loop and open all language files
      * @param callback Callback called for each file
@@ -228,18 +211,44 @@ define(function (require, exports, module) {
             }
         }, function () {
             CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
-            var dialog = '<table style="margin-right: 1em">';
+            var table = $('<table/>').css('margin-right', '1em');
             for (var lang in lines) {
                 var line = lines[lang];
-                dialog +=
-                    '<tr>' +
-                        '<td style="white-space: nowrap; width: 5%">"' + escapeHtml(key) + '" in "<strong>' + escapeHtml(lang) + '</strong>"</td>' +
-                        '<td><input style="width: 100%;box-sizing: border-box;height: 30px;" type="text" name="' + escapeHtml(lang) + '" value="' + escapeHtml(line) + '"/></td>' +
-                        '</tr>';
+                var tr = $('<tr/>')
+                    .append(
+                        $('<td/>')
+                            .css({
+                                whiteSpace: 'nowrap',
+                                width: '5%'
+                            })
+                            .append(
+                                $('<span/>')
+                                    .text('"' + key + '" in "')
+                            )
+                            .append(
+                                $('<strong/>')
+                                    .text(lang)
+                            )
+                            .append('"')
+                    )
+                    .append(
+                        $('<td/>')
+                            .append(
+                                $('<input/>')
+                                    .attr('type', 'text')
+                                    .attr('name', lang)
+                                    .val(line)
+                                    .css({
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                        height: 30
+                                    })
+                            )
+                    );
+                table.append(tr);
             }
-            dialog += '</table>'
 
-            createModalBar(dialog);
+            createModalBar(table);
             var inputs = getDialogTextFields();
 
             inputs.eq(0).focus();
