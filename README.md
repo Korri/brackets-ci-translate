@@ -24,4 +24,4 @@ You can do two things with the plugin:
 
 
 ####Donate
-Want to pay me a beer, why not with dogecoin ? [DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX](dogecoin:DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX?amount=500&message=doge4water%20donation&label=doge4water)
+Want to pay me a beer, why not with dogecoin ? [DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX](dogecoin:DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX?amount=500&message=brackets-ci-translate&label=korri)
