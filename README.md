@@ -21,3 +21,7 @@ You can do two things with the plugin:
 2. Click on `Edit => CITranslate: Edit Translation` or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>
 3.  Enter you translations in the new modal then press `Enter`
 4.  Files are now edited, but you must save them in order to apply changes (Or hit <kbd>Ctrl</kbd>+<kbd>Z</kbd> if something is messed up)
+
+
+####Donate
+Want to pay me a beer, why not with dogecoin ? [DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX](dogecoin:DMpRH9DKQHnUTvXYQ6sSqb9UN883WpmzrX?amount=500&message=doge4water%20donation&label=doge4water)
