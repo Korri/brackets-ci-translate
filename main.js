@@ -393,8 +393,8 @@ define(function (require, exports, module) {
 
 
     menu.addMenuDivider();
-    menu.addMenuItem(COMMAND_ID_CONVERT, 'Ctrl-Alt-L');
-    menu.addMenuItem(COMMAND_ID_EDIT, 'Ctrl-Shift-Alt-L');
+    menu.addMenuItem(COMMAND_ID_CONVERT, 'Ctrl-Alt-T');
+    menu.addMenuItem(COMMAND_ID_EDIT, 'Ctrl-Shift-Alt-T');
 
     exports.handleConvert = handleConvert;
     exports.handleTranslate = handleTranslate;
