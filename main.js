@@ -6,6 +6,7 @@ define(function (require, exports, module) {
         EditorManager = brackets.getModule("editor/EditorManager"),
         Menus = brackets.getModule("command/Menus"),
         ProjectManager = brackets.getModule("project/ProjectManager"),
+        NativeFileSystem = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         ModalBar = brackets.getModule("widgets/ModalBar").ModalBar,
         FileUtils = brackets.getModule("file/FileUtils"),
         KeyEvent = brackets.getModule("utils/KeyEvent"),
@@ -14,7 +15,7 @@ define(function (require, exports, module) {
     var modalBar = null,
         TRANSLATE_FILE_KEY = 'korri.citranslate.langfile.';
 
-    function createModalBar(template) {
+    function createModalBar(template, submitCallback) {
         if (modalBar) {
             modalBar.close(true);
         }
@@ -31,7 +32,9 @@ define(function (require, exports, module) {
                 }
                 var oldModal = modalBar;
                 if (e.keyCode === KeyEvent.DOM_VK_RETURN) {
-                    $(modalBar).triggerHandler('submit');
+                    if (submitCallback) {
+                        submitCallback.call(modalBar);
+                    }
                 }
                 if (modalBar === oldModal) {
                     modalBar = null;
@@ -88,7 +91,7 @@ define(function (require, exports, module) {
                                     if (languageFile.isDirectory) {
                                         alert('Language file (' + language_file + '.php) is a directory !');
                                     } else {
-                                        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: languageFile.fullPath })
+                                        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, {fullPath: languageFile.fullPath})
                                             .done(function (doc) {
                                                 callback(doc, entry.name);
                                                 if (--count == 0 && end_callback) {
@@ -209,50 +212,45 @@ define(function (require, exports, module) {
                 alert('Line "' + key + '" not found in "' + language + '" language file.');
             }
         }, function () {
-            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
+            CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath});
             var table = $('<table/>').css('margin-right', '1em');
             for (var lang in lines) {
                 var line = lines[lang];
                 var tr = $('<tr/>')
                     .append(
-                        $('<td/>')
-                            .css({
-                                whiteSpace: 'nowrap',
-                                width: '5%'
-                            })
-                            .append(
-                                $('<span/>')
-                                    .text('"' + key + '" in "')
-                            )
-                            .append(
-                                $('<strong/>')
-                                    .text(lang)
-                            )
-                            .append('"')
+                    $('<td/>')
+                        .css({
+                            whiteSpace: 'nowrap',
+                            width: '5%'
+                        })
+                        .append(
+                        $('<span/>')
+                            .text('"' + key + '" in "')
                     )
+                        .append(
+                        $('<strong/>')
+                            .text(lang)
+                    )
+                        .append('"')
+                )
                     .append(
-                        $('<td/>')
-                            .append(
-                                $('<input/>')
-                                    .attr('type', 'text')
-                                    .attr('name', lang)
-                                    .val(line)
-                                    .css({
-                                        width: '100%',
-                                        boxSizing: 'border-box',
-                                        height: 30
-                                    })
-                            )
-                    );
+                    $('<td/>')
+                        .append(
+                        $('<input/>')
+                            .attr('type', 'text')
+                            .attr('name', lang)
+                            .val(line)
+                            .css({
+                                width: '100%',
+                                boxSizing: 'border-box',
+                                height: 30
+                            })
+                    )
+                );
                 table.append(tr);
             }
 
-            createModalBar(table);
-            var inputs = getDialogTextFields();
-
-            inputs.eq(0).focus();
-
-            $(modalBar).on('submit', function (ev) {
+            createModalBar(table, function () {
 
                 var lines = {};
 
@@ -269,10 +267,12 @@ define(function (require, exports, module) {
                     text = text.replace(reg, line);
                     doc.setText(text);
                 }, function () {
-                    CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
+                    CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath});
                 });
 
             });
+            var inputs = getDialogTextFields();
+            inputs.eq(0).focus();
         });
     }
 
@@ -321,7 +321,7 @@ define(function (require, exports, module) {
             }
         }, function () {
             //Back to main edited document
-            CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath }).done(function () {
+            CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath}).done(function () {
                 var choose_tag = function () {
                     var key = $(this).text(),
                         lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
@@ -355,10 +355,7 @@ define(function (require, exports, module) {
                     }
                 }
 
-                createModalBar(queryDialog);
-                input.focus();
-
-                $(modalBar).on('submit', function () {
+                createModalBar(queryDialog, function () {
                     var key = input.val(),
                         lang_tag = is_smarty ? '{l "' + key + '"}' : "lang('" + key + "')";
 
@@ -373,10 +370,11 @@ define(function (require, exports, module) {
                         text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
                         doc.setText(text);
                     }, function () {
-                        CommandManager.execute(Commands.FILE_OPEN, { fullPath: originalFileEntry.fullPath });
+                        CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath});
                         translateKey(key);
                     });
                 });
+                input.focus();
             });
         });
     }
