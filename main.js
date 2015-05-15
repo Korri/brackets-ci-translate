@@ -10,7 +10,9 @@ define(function (require, exports, module) {
         ModalBar = brackets.getModule("widgets/ModalBar").ModalBar,
         FileUtils = brackets.getModule("file/FileUtils"),
         KeyEvent = brackets.getModule("utils/KeyEvent"),
-        FileSystem = brackets.getModule("filesystem/FileSystem");
+        FileSystem = brackets.getModule("filesystem/FileSystem"),
+        Directory = brackets.getModule("filesystem/Directory"),
+        DocumentManager = brackets.getModule('document/DocumentManager');
 
     var modalBar = null,
         TRANSLATE_FILE_KEY = 'korri.citranslate.langfile.';
@@ -83,15 +85,21 @@ define(function (require, exports, module) {
                     } else {
                         var count = entries.length;
                         entries.forEach(function (entry) {
+                            if (!(entry instanceof Directory)) {
+                                if (--count == 0 && end_callback) {
+                                    end_callback();
+                                }
+                                return;
+                            }
                             FileSystem.resolve(entry.fullPath + language_file + '.php', function (err, languageFile) {
                                 if (err) {
                                     localStorage[translate_key] = false;
-                                    alert('Language file (' + language_file + '.php) not found (' + err + '), will ask for language file name again next time.');
+                                    alert('Language file (' + entry.name + '/' + language_file + '.php) not found (' + err + '), will ask for language file name again next time.');
                                 } else {
                                     if (languageFile.isDirectory) {
                                         alert('Language file (' + language_file + '.php) is a directory !');
                                     } else {
-                                        CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, {fullPath: languageFile.fullPath})
+                                        DocumentManager.getDocumentForPath(languageFile.fullPath)
                                             .done(function (doc) {
                                                 callback(doc, entry.name);
                                                 if (--count == 0 && end_callback) {
@@ -212,7 +220,7 @@ define(function (require, exports, module) {
                 alert('Line "' + key + '" not found in "' + language + '" language file.');
             }
         }, function () {
-            CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath});
+            CommandManager.execute(Commands.CMD_OPEN, {fullPath: originalFileEntry.fullPath});
             var table = $('<table/>').css('margin-right', '1em');
             for (var lang in lines) {
                 var line = lines[lang];
@@ -370,7 +378,7 @@ define(function (require, exports, module) {
                         text += "\n$lang['" + key + "'] = '" + escapeString(selectedText) + "';";
                         doc.setText(text);
                     }, function () {
-                        CommandManager.execute(Commands.FILE_OPEN, {fullPath: originalFileEntry.fullPath});
+                        //CommandManager.execute(Commands.CMD_OPEN, {fullPath: originalFileEntry.fullPath});
                         translateKey(key);
                     });
                 });
