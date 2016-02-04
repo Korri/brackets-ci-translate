@@ -6,7 +6,6 @@ define(function (require, exports, module) {
         EditorManager = brackets.getModule("editor/EditorManager"),
         Menus = brackets.getModule("command/Menus"),
         ProjectManager = brackets.getModule("project/ProjectManager"),
-        NativeFileSystem = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         ModalBar = brackets.getModule("widgets/ModalBar").ModalBar,
         FileUtils = brackets.getModule("file/FileUtils"),
         KeyEvent = brackets.getModule("utils/KeyEvent"),
