@@ -3,7 +3,7 @@
     "title": "CodeIgniter Translate",
     "description": "Tool to help translate CodeIgniter template, works with PHP and Smarty. Automatically places the string into languages files and replaces it by a key. Allows modifying the translations from the template.",
     "homepage": "https://github.com/Korri/brackets-ci-translate/",
-    "version": "0.0.14",
+    "version": "0.1.0",
     "author": "Hugo Vacher <korrrigan33@gmail.com>",
     "license": "MIT",
     "engines": {
